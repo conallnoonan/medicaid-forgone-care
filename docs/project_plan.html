@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Medicaid expansion and forgone care: project plan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;800&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root{--paper:#F7F9FA;--ink:#17283B;--muted:#5B6B7B;--rule:#D3DCE3;--teal:#1B6B8A;--amber:#D98E04;--wash:#E8EFF3;--code:#0F1E2E;}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:1.5rem}
+body{margin:0;background:var(--paper);color:var(--ink);font:1.05rem/1.65 "Source Serif 4",Georgia,serif}
+h1,h2,h3,nav,th,.tag,.sans{font-family:"Public Sans",system-ui,sans-serif}
+.layout{display:grid;grid-template-columns:230px minmax(0,1fr);max-width:1180px;margin:0 auto}
+nav{position:sticky;top:0;align-self:start;height:100vh;padding:2rem 1.25rem;border-right:1px solid var(--rule);font-size:.9rem;overflow:auto}
+nav b{display:block;font-weight:800;margin-bottom:1rem;line-height:1.25}
+nav a{display:block;color:var(--muted);text-decoration:none;padding:.3rem 0 .3rem .75rem;border-left:2px solid transparent}
+nav a:hover,nav a:focus-visible{color:var(--teal);border-left-color:var(--teal);outline:none}
+main{padding:2.5rem 2.5rem 5rem;max-width:860px}
+header.hero{margin-bottom:3rem}
+h1{font-size:clamp(2rem,4.4vw,3.1rem);line-height:1.08;font-weight:800;letter-spacing:-.02em;margin:0 0 1rem}
+.lede{font-size:1.2rem;color:var(--muted);max-width:60ch;margin:0 0 1.5rem}
+.meta{display:flex;flex-wrap:wrap;gap:.5rem}
+.tag{font-size:.8rem;background:var(--wash);border-radius:3px;padding:.25rem .6rem;color:var(--ink)}
+figure{margin:2rem 0 0;padding:1.25rem;background:#fff;border:1px solid var(--rule);border-radius:6px}
+figcaption{font:.85rem/1.4 "Public Sans",sans-serif;color:var(--muted);margin-top:.5rem}
+section{margin-top:3.5rem}
+h2{font-size:1.6rem;font-weight:800;letter-spacing:-.01em;margin:0 0 .25rem;padding-top:1rem;border-top:3px solid var(--ink)}
+h3{font-size:1.05rem;font-weight:600;margin:1.75rem 0 .25rem}
+p{margin:.6rem 0;max-width:68ch}
+.q{font-style:italic;color:var(--muted);margin:0 0 1rem}
+ul{padding-left:1.2rem;max-width:68ch}li{margin:.3rem 0}
+table{width:100%;border-collapse:collapse;font-size:.92rem;margin:1rem 0}
+th,td{text-align:left;vertical-align:top;padding:.55rem .7rem;border-bottom:1px solid var(--rule)}
+th{font-size:.85rem;font-weight:600;background:var(--wash)}
+.scroll{overflow-x:auto}
+code{font:.88em ui-monospace,Menlo,Consolas,monospace;background:var(--wash);padding:.1em .35em;border-radius:3px}
+pre{background:var(--code);color:#E4EEF4;padding:1rem 1.2rem;border-radius:6px;overflow-x:auto;font:.85rem/1.55 ui-monospace,Menlo,Consolas,monospace}
+pre code{background:none;padding:0}
+.note{border-left:4px solid var(--amber);background:#FBF3E0;padding:.8rem 1rem;margin:1.25rem 0;font-size:.97rem;max-width:68ch}
+.note b{font-family:"Public Sans",sans-serif}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+.pkg{columns:2;column-gap:2rem;max-width:68ch}
+.pkg li{break-inside:avoid}
+@media(max-width:900px){.layout{grid-template-columns:1fr}nav{position:static;height:auto;border-right:0;border-bottom:1px solid var(--rule);display:flex;flex-wrap:wrap;gap:.25rem .9rem}nav b{width:100%;margin-bottom:.25rem}nav a{border:0;padding:.15rem 0}main{padding:1.5rem 1.1rem 4rem}.grid2,.pkg{grid-template-columns:1fr;columns:1}}
+@media print{nav{display:none}.layout{display:block}main{padding:0}pre{white-space:pre-wrap}}
+</style>
+</head>
+<body>
+<div class="layout">
+<nav aria-label="Sections">
+<b>Project plan</b>
+<a href="#overview">Overview</a>
+<a href="#hw5">Homework 5 answers</a>
+<a href="#data">Data sources</a>
+<a href="#sample">Sample and variables</a>
+<a href="#methods">Analysis plan</a>
+<a href="#packages">R packages</a>
+<a href="#code">Starter code</a>
+<a href="#threats">Limitations</a>
+<a href="#timeline">Timeline</a>
+<a href="#open">Open decisions</a>
+</nav>
+<main>
+
+<header class="hero" id="overview">
+<h1>Did Medicaid expansion reduce cost-related forgone care among low-income adults?</h1>
+<p class="lede">A policy evaluation using BRFSS survey data, comparing expansion and non-expansion states before and after expansion. Final project, graduate intro to applied social statistics (R).</p>
+<div class="meta"><span class="tag">Public health policy</span><span class="tag">Survey data, complex design</span><span class="tag">Logistic regression and difference-in-differences</span></div>
+<figure>
+<svg viewBox="0 0 640 250" role="img" aria-label="Schematic of expected pattern: cost barrier rates fall faster in expansion states after expansion" width="100%">
+<g font-family="Public Sans,sans-serif" font-size="12" fill="#5B6B7B">
+<line x1="50" y1="20" x2="50" y2="200" stroke="#D3DCE3"/><line x1="50" y1="200" x2="620" y2="200" stroke="#D3DCE3"/>
+<line x1="300" y1="20" x2="300" y2="200" stroke="#17283B" stroke-dasharray="4 4"/>
+<text x="306" y="34" fill="#17283B">Expansion takes effect</text>
+<polyline points="60,70 120,68 180,66 240,67 300,66 360,62 420,58 480,56 540,55 610,54" fill="none" stroke="#9AA8B4" stroke-width="3"/>
+<polyline points="60,95 120,93 180,92 240,92 300,90 360,125 420,140 480,148 540,152 610,155" fill="none" stroke="#1B6B8A" stroke-width="3"/>
+<text x="500" y="46" fill="#5B6B7B">Non-expansion states</text>
+<text x="500" y="176" fill="#1B6B8A">Expansion states</text>
+<text x="8" y="24">Cost barrier rate</text><text x="50" y="220">Years before</text><text x="520" y="220">Years after</text>
+</g></svg>
+<figcaption>Schematic of the hypothesized pattern, not real data. Parallel pre-trends, then divergence after expansion. The final project will replace this with weighted BRFSS estimates.</figcaption>
+</figure>
+</header>
+
+<section id="hw5">
+<h2>Homework 5 answers</h2>
+
+<h3>1. Problem</h3>
+<p>Did states that expanded Medicaid under the ACA see a larger drop in the share of low-income adults who skipped needed medical care because of cost, compared with states that did not expand?</p>
+<p><b>Why it matters:</b> Coverage expansions are judged by whether they change access to care, and Medicaid eligibility remains a live policy debate. The question has a clear treatment, a clear comparison group, and national data.</p>
+
+<h3>2. Underlying process</h3>
+<ul>
+<li>Expansion extends eligibility to adults up to 138% of the federal poverty line.</li>
+<li>Eligible adults enroll, which lowers or removes out-of-pocket costs.</li>
+<li>Lower costs raise the chance that someone seeks care when they need it, so fewer report skipping care because of cost.</li>
+</ul>
+<p>Individual factors (income, age, health status, employment) shape exposure. State factors (provider supply, outreach, existing safety nets) shape how strongly the policy works. States chose whether to expand, so exposure is not randomly assigned. That makes confounding the central design problem.</p>
+
+<h3>3. Data to test the hypothesis</h3>
+<p>BRFSS is the primary source, with KFF expansion dates and state-level covariates from the ACS. Details are in the <a href="#data">data sources</a> table.</p>
+
+<h3>4. Dependent and primary independent variables</h3>
+<ul>
+<li><b>Dependent:</b> whether the respondent needed a doctor in the past 12 months but could not afford one (BRFSS cost-barrier item). Secondary option: the weighted state-year share reporting a cost barrier.</li>
+<li><b>Primary independent:</b> expansion state × post-expansion period (the difference-in-differences term). A simpler baseline is a binary indicator for whether the respondent’s state had expanded at the time of the survey.</li>
+<li><b>Controls:</b> age, sex, race/ethnicity, education, income category, employment, plus state and year fixed effects.</li>
+</ul>
+
+<h3>5. Measurement types</h3>
+<div class="scroll"><table>
+<tr><th>Variable</th><th>Role</th><th>Type</th></tr>
+<tr><td>Cost barrier</td><td>Dependent</td><td>Binary (nominal)</td></tr>
+<tr><td>Expansion status, post period, interaction</td><td>Primary independent</td><td>Binary (nominal)</td></tr>
+<tr><td>Age</td><td>Control</td><td>Continuous (ratio), or ordinal if only age bands are available</td></tr>
+<tr><td>Income category</td><td>Control</td><td>Ordinal</td></tr>
+<tr><td>Sex, race/ethnicity, education, employment</td><td>Control</td><td>Nominal (education can be treated as ordinal)</td></tr>
+<tr><td>State</td><td>Fixed effect, cluster</td><td>Nominal</td></tr>
+<tr><td>Survey year</td><td>Fixed effect</td><td>Discrete, treated as categorical</td></tr>
+</table></div>
+
+<h3>6. Distribution of the data generating process</h3>
+<p>At the individual level the outcome is <b>Bernoulli</b>: each person either forgoes care or does not, with probability <i>p</i> that depends on covariates. Aggregated to state-year cells, the count out of <i>n</i> respondents is <b>binomial</b>. Real data will probably show overdispersion from unmeasured state differences, so the plan checks for it and falls back to quasibinomial standard errors or state-clustered errors. The logit link models <i>p</i> directly and keeps predictions between 0 and 1. Survey weights are required because BRFSS is a complex design.</p>
+
+<h3>7. Visualization</h3>
+<ul>
+<li><b>Distribution:</b> bar chart of the weighted cost-barrier share by expansion status (before and after).</li>
+<li><b>Relationship:</b> line plot of the weighted cost-barrier rate by year, one line per group, with a vertical line at the expansion date. This is the figure in the header, built from real data.</li>
+<li><b>Model results:</b> coefficient or odds-ratio plot comparing models with and without controls.</li>
+<li><b>Optional:</b> state map of the change in cost-barrier rate, pre versus post.</li>
+</ul>
+</section>
+
+<section id="data">
+<h2>Data sources</h2>
+<div class="scroll"><table>
+<tr><th>Source</th><th>Use</th><th>Access</th></tr>
+<tr><td>BRFSS (CDC)</td><td>Individual-level outcome, income, insurance, demographics, survey weights</td><td>Annual XPT files from the CDC BRFSS site; read with <code>haven::read_xpt()</code></td></tr>
+<tr><td>KFF Medicaid expansion tracker</td><td>State expansion status and effective dates (treatment timing)</td><td>Public table; enter as a small CSV</td></tr>
+<tr><td>ACS state-level estimates (Census)</td><td>State covariates: unemployment, median income, urbanicity</td><td>Census API via <code>tidycensus</code> (free key)</td></tr>
+<tr><td>Optional: NHIS or CPS ASEC</td><td>Robustness check on the outcome or on income and poverty measurement</td><td>IPUMS Health Surveys or IPUMS CPS</td></tr>
+</table></div>
+</section>
+
+<section id="sample">
+<h2>Sample and variables</h2>
+<h3>Proposed sample</h3>
+<ul>
+<li><b>Population:</b> adults ages 19–64 (Medicaid expansion targets non-elderly adults).</li>
+<li><b>Income restriction:</b> the group most exposed to expansion. BRFSS reports income in categories, so use the category that best approximates under about 138% of poverty and say that it is a proxy.</li>
+<li><b>Years:</b> roughly 2011–2019. BRFSS changed its weighting method and added cell-phone samples in 2011, so earlier years are not comparable, and 2020 onward brings pandemic disruption and further changes.</li>
+</ul>
+<h3>Variables to locate in the BRFSS codebook</h3>
+<div class="scroll"><table>
+<tr><th>Concept</th><th>Typical variable</th></tr>
+<tr><td>Cost barrier to care</td><td><code>MEDCOST</code> (renamed <code>MEDCOST1</code> in recent years)</td></tr>
+<tr><td>State</td><td><code>_STATE</code></td></tr>
+<tr><td>Survey weight, strata, PSU</td><td><code>_LLCPWT</code>, <code>_STSTR</code>, <code>_PSU</code></td></tr>
+<tr><td>Income</td><td><code>INCOME2</code> (later <code>INCOME3</code>)</td></tr>
+<tr><td>Age, sex, race, education, employment</td><td><code>_AGEG5YR</code>, <code>SEX</code>/<code>SEXVAR</code>, <code>_RACE</code>, <code>_EDUCAG</code>, <code>EMPLOY1</code></td></tr>
+<tr><td>Insurance coverage (mechanism check)</td><td><code>HLTHPLN1</code></td></tr>
+</table></div>
+<div class="note"><b>Verify before coding.</b> Names and codings change across years. Confirm each variable in the codebook for every year you use, and recode “don’t know” and “refused” to missing.</div>
+</section>
+
+<section id="methods">
+<h2>Analysis plan</h2>
+<h3>Descriptive stage</h3>
+<ul>
+<li>Weighted summary table of sample characteristics by expansion status.</li>
+<li>Weighted cost-barrier rates by group and year; check pre-trends visually.</li>
+</ul>
+<h3>Primary model</h3>
+<p>Survey-weighted logistic regression, difference-in-differences form:</p>
+<pre><code>logit P(cost_barrier = 1) = b0 + b1(expansion_state × post) + X'g + state FE + year FE</code></pre>
+<p>Report the odds ratio on the interaction and also average marginal effects, which are easier to interpret in percentage points.</p>
+<h3>Robustness</h3>
+<ul>
+<li>Linear probability model with state-clustered standard errors, as a check on the logit.</li>
+<li>Placebo test: higher-income adults (not eligible) should show little or no effect.</li>
+<li>Mechanism check: repeat with “has any health coverage” as the outcome, since coverage is the proposed channel.</li>
+<li>Event-study version with leads and lags to test the parallel trends assumption.</li>
+<li>Extension, if time allows: staggered adoption makes simple two-way fixed effects unreliable, so compare against the Callaway–Sant’Anna estimator (<code>did</code> package).</li>
+</ul>
+</section>
+
+<section id="packages">
+<h2>R packages</h2>
+<ul class="pkg">
+<li><code>tidyverse</code>: data wrangling and plotting</li>
+<li><code>haven</code>: read BRFSS XPT files</li>
+<li><code>survey</code> and <code>srvyr</code>: weighted estimates, design-based models</li>
+<li><code>fixest</code>: fixed effects and clustered errors</li>
+<li><code>marginaleffects</code>: predicted probabilities, marginal effects</li>
+<li><code>broom</code> and <code>modelsummary</code>: tidy output and tables</li>
+<li><code>ggplot2</code>, <code>patchwork</code>, <code>scales</code>: figures</li>
+<li><code>tidycensus</code>: ACS covariates</li>
+<li><code>janitor</code>: name cleaning</li>
+<li><code>here</code>: file paths</li>
+<li><code>did</code>: staggered DiD extension</li>
+<li><code>quarto</code> or <code>rmarkdown</code>: final report</li>
+</ul>
+</section>
+
+<section id="code">
+<h2>Starter code</h2>
+<pre><code>library(tidyverse); library(haven); library(survey); library(srvyr)
+
+brfss &lt;- read_xpt("data/raw/LLCP2015.XPT") |&gt;
+  transmute(state = `_STATE`, wt = `_LLCPWT`, strata = `_STSTR`, psu = `_PSU`,
+            year = 2015,
+            cost_barrier = case_when(MEDCOST == 1 ~ 1, MEDCOST == 2 ~ 0))
+
+# Weighted rate by group
+brfss |&gt; filter(!is.na(cost_barrier)) |&gt;
+  as_survey_design(ids = psu, strata = strata, weights = wt, nest = TRUE) |&gt;
+  group_by(year) |&gt;
+  summarise(rate = survey_mean(cost_barrier, vartype = "ci"))</code></pre>
+<p>Repeat for each year, stack with <code>bind_rows()</code>, then join the expansion table on state.</p>
+</section>
+
+<section id="threats">
+<h2>Limitations and how to address them</h2>
+<div class="scroll"><table>
+<tr><th>Threat</th><th>Response</th></tr>
+<tr><td>States chose to expand (non-random assignment)</td><td>Difference-in-differences with state fixed effects; test pre-trends; control for state covariates</td></tr>
+<tr><td>Parallel trends may fail</td><td>Event-study plot; placebo group</td></tr>
+<tr><td>Income is categorical, so eligibility is only approximated</td><td>State the proxy, and test sensitivity to the income cutoff</td></tr>
+<tr><td>Self-reported outcome, survey nonresponse</td><td>Use weights; note limits of self-report</td></tr>
+<tr><td>Staggered adoption and early expanders</td><td>Define timing carefully; consider the <code>did</code> extension</td></tr>
+<tr><td>Questionnaire and weighting changes across years</td><td>Restrict years; check codebooks</td></tr>
+</table></div>
+<p><b>Relevance to survey research work:</b> the project uses a complex survey design, weighting, and a policy question with a credible comparison group, which are the core skills in applied survey research.</p>
+</section>
+
+<section id="timeline">
+<h2>Timeline</h2>
+<div class="scroll"><table>
+<tr><th>Phase</th><th>Tasks</th><th>Deliverable</th></tr>
+<tr><td>1. Setup</td><td>Download BRFSS years, build KFF expansion table, read codebooks</td><td>Clean, documented raw data folder</td></tr>
+<tr><td>2. Build</td><td>Recode variables, apply sample restrictions, merge expansion dates</td><td>Analysis-ready dataset and cleaning script</td></tr>
+<tr><td>3. Describe</td><td>Weighted tables, trend plots, pre-trend check</td><td>Figures 1–2, Table 1</td></tr>
+<tr><td>4. Model</td><td>Weighted logit DiD, marginal effects, robustness checks</td><td>Model table, coefficient plot</td></tr>
+<tr><td>5. Write</td><td>Interpret, discuss limitations, polish figures</td><td>Final report (Quarto)</td></tr>
+</table></div>
+<p>Work backward from the course deadline and assign dates to each phase.</p>
+</section>
+
+<section id="open">
+<h2>Open decisions</h2>
+<ul>
+<li>Which years to include (2011–2019 recommended) and whether to treat early expanders separately.</li>
+<li>Individual-level logit (more power, needs survey design) versus state-year aggregates (simpler).</li>
+<li>Whether the staggered-adoption extension fits the scope of the course.</li>
+<li>Confirm with the instructor that BRFSS and a DiD approach satisfy the final project requirements.</li>
+</ul>
+</section>
+
+</main>
+</div>
+</body>
+</html>

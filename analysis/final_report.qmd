@@ -1,0 +1,85 @@
+---
+title: "Medicaid expansion and cost-related forgone care among low-income adults"
+author: "Your name"
+date: today
+format:
+  html:
+    toc: true
+    embed-resources: true
+  pdf:
+    toc: true
+execute:
+  echo: false
+  warning: false
+---
+
+```{r setup}
+library(tidyverse)
+library(here)
+```
+
+## 1. Problem
+
+Did states that expanded Medicaid under the ACA see a larger drop in the share of low-income adults who skipped needed care because of cost, compared with non-expansion states?
+
+## 2. Data generating process
+
+*Eligibility expands to 138% of poverty, eligible adults enroll, out-of-pocket costs fall, and more people seek care when needed. Individual factors shape exposure; state factors shape strength. States chose whether to expand, so assignment is not random.*
+
+## 3. Data
+
+BRFSS 2011-2019 (CDC) accessed with the `brfssdata` package; KFF expansion dates; optional ACS covariates.
+
+## 4. Measures
+
+- **Dependent variable:** could not see a doctor in the past 12 months because of cost (binary).
+- **Primary independent variable:** state Medicaid expansion in effect (time-varying binary), with state and year fixed effects.
+- **Controls:** age band, race/ethnicity, education, employment, income category.
+
+## 5. Measure types
+
+| Variable | Type |
+|---|---|
+| Cost barrier | Binary |
+| Expansion in effect | Binary |
+| Income category | Ordinal |
+| Age band | Ordinal |
+| Race/ethnicity, education, employment, state | Nominal |
+| Year | Discrete (fixed effect) |
+
+## 6. Distribution
+
+Individual outcome: Bernoulli. State-year counts: binomial, with possible overdispersion handled by quasibinomial and clustered standard errors. Survey weights account for the complex design.
+
+## 7. Results
+
+```{r fig-trend}
+#| fig-cap: "Weighted cost-barrier rate by year and expansion status."
+knitr::include_graphics(here("output", "figures", "fig1_trend.png"))
+```
+
+```{r tbl-or}
+readr::read_csv(here("output", "tables", "primary_odds_ratios.csv"), show_col_types = FALSE) |>
+  select(model, estimate, conf.low, conf.high, p.value) |>
+  knitr::kable(digits = 3, caption = "Odds ratio for expansion in effect.")
+```
+
+```{r fig-or}
+#| fig-cap: "Odds ratios with 95% confidence intervals."
+knitr::include_graphics(here("output", "figures", "fig2_odds_ratios.png"))
+```
+
+## 8. Robustness
+
+*Summarize the linear probability model, placebo test (higher-income adults), mechanism check (health coverage), and event study.*
+
+## 9. Limitations
+
+- Expansion was not randomly assigned; identification relies on parallel trends.
+- Income is categorical, so eligibility is only approximated.
+- Self-reported outcome and survey nonresponse.
+- Staggered adoption can bias two-way fixed effects estimates; compare against a staggered-adoption estimator if time allows.
+
+## References
+
+Cite with `brfssdata::brfss_citation(2011:2019)` and the CDC BRFSS.
