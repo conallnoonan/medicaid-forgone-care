@@ -1,0 +1,5 @@
+id,label,type,estimate,conf_low,conf_high,n
+lpm_main,"Main: cost barrier, low-income adults (LPM)",prob,-0.033382499727828,-0.046288323946943585,-0.020476675508712416,564898
+placebo,"Placebo: cost barrier, higher-income adults",prob,-0.0027909725815355303,-0.006788226285444645,0.001206281122373584,1208286
+coverage,"Mechanism: health coverage, low-income adults",prob,0.04664718432063242,0.023246326613680975,0.07004804202758386,574387
+logit_clustered,"Main: cost barrier, low-income adults (logit, odds ratio)",or,0.814933644067858,0.769941067902744,0.8625554239400656,564898
