@@ -143,13 +143,15 @@ At the individual level, each respondent either forgoes care or does not, so the
 
 ## Estimating equations
 
+The probability model $Pr(Y_{ist} = 1)$ is intended to predict the probability that a respondent will forgo medical care due to cost barriers.
+
 The main specification is a two-way fixed effects difference-in-differences model. For respondent $i$ in state $s$ and year $t$:
 
 $$\Pr(Y_{ist}=1)=\Lambda\!\left(\alpha_s+\gamma_t+\beta\,\text{Expansion}_{st}+X_{ist}'\delta\right)$$
 
 where $\Lambda$ is the logistic function, $\alpha_s$ are state fixed effects, $\gamma_t$ are year fixed effects, $\text{Expansion}_{st}$ equals 1 when expansion is in effect, and $X_{ist}$ are the controls. A linear probability version replaces $\Lambda$ with a linear function, so $\beta$ is directly a change in probability.
 
-The event study replaces the single treatment indicator with indicators for each year relative to expansion:
+The event study replaces the single treatment indicator($\beta \space \text{Expansion}_{st}$) with indicators for each year relative to expansion:
 
 $$Y_{ist}=\alpha_s+\gamma_t+\sum_{k\neq -1}\beta_k\,\mathbf{1}[t-g_s=k]+X_{ist}'\delta+\varepsilon_{ist}$$
 

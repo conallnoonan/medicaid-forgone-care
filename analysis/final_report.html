@@ -6,8 +6,8 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="author" content="Your name">
-<meta name="dcterms.date" content="2026-11-24">
+<meta name="author" content="Conall Noonan">
+<meta name="dcterms.date" content="2026-11-25">
 
 <title>Medicaid expansion and cost-related forgone care among low-income adults</title>
 <style>
@@ -2365,14 +2365,14 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Author</div>
     <div class="quarto-title-meta-contents">
-             <p>Your name </p>
+             <p>Conall Noonan </p>
           </div>
   </div>
     
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">November 24, 2026</p>
+      <p class="date">November 25, 2026</p>
     </div>
   </div>
   
@@ -2564,10 +2564,11 @@ Table 1: Variables, roles and measurement types.
 </section>
 <section id="estimating-equations" class="level2" data-number="6.2">
 <h2 data-number="6.2" class="anchored" data-anchor-id="estimating-equations"><span class="header-section-number">6.2</span> Estimating equations</h2>
+<p>The probability model <span class="math inline">\(Pr(Y_{ist} = 1)\)</span> is intended to predict the probability that a respondent will forgo medical care due to cost barriers.</p>
 <p>The main specification is a two-way fixed effects difference-in-differences model. For respondent <span class="math inline">\(i\)</span> in state <span class="math inline">\(s\)</span> and year <span class="math inline">\(t\)</span>:</p>
 <p><span class="math display">\[\Pr(Y_{ist}=1)=\Lambda\!\left(\alpha_s+\gamma_t+\beta\,\text{Expansion}_{st}+X_{ist}&#39;\delta\right)\]</span></p>
 <p>where <span class="math inline">\(\Lambda\)</span> is the logistic function, <span class="math inline">\(\alpha_s\)</span> are state fixed effects, <span class="math inline">\(\gamma_t\)</span> are year fixed effects, <span class="math inline">\(\text{Expansion}_{st}\)</span> equals 1 when expansion is in effect, and <span class="math inline">\(X_{ist}\)</span> are the controls. A linear probability version replaces <span class="math inline">\(\Lambda\)</span> with a linear function, so <span class="math inline">\(\beta\)</span> is directly a change in probability.</p>
-<p>The event study replaces the single treatment indicator with indicators for each year relative to expansion:</p>
+<p>The event study replaces the single treatment indicator(<span class="math inline">\(\beta \space \text{Expansion}_{st}\)</span>) with indicators for each year relative to expansion:</p>
 <p><span class="math display">\[Y_{ist}=\alpha_s+\gamma_t+\sum_{k\neq -1}\beta_k\,\mathbf{1}[t-g_s=k]+X_{ist}&#39;\delta+\varepsilon_{ist}\]</span></p>
 <p>where <span class="math inline">\(g_s\)</span> is the first full year of expansion in state <span class="math inline">\(s\)</span>, the year before expansion (<span class="math inline">\(k=-1\)</span>) is the reference, and the end points are binned at -4 and 4. States that never expanded serve as the comparison group.</p>
 </section>
