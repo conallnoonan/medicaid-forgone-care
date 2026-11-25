@@ -11,7 +11,7 @@ m1 <- svyglm(cost_barrier ~ treated_post + factor(state_fips) + factor(year),
              design = des, family = quasibinomial())
 
 # Model 2: add individual controls
-m2 <- svyglm(cost_barrier ~ treated_post + age_band + race_cat + educ_cat + employ_cat +
+m2 <- svyglm(cost_barrier ~ treated_post + age_band + sex_cat + race_cat + educ_cat + employ_cat +
                factor(income_cat) + factor(state_fips) + factor(year),
              design = des, family = quasibinomial())
 

@@ -13,9 +13,8 @@ brfss_download(STUDY_YEARS)
 # Core variables (a name that matches nothing raises an error)
 core <- read_brfss(STUDY_YEARS, vars = CORE_VARS)
 
-# Sex is not in CORE_VARS because the variable name changes (SEX in earlier years,
-# SEXVAR from 2018). Run brfss_vars("sex") and brfss_crosswalk() to see the years each covers,
-# then add the right name(s) to CORE_VARS in R/helpers.R and coalesce them in 02_clean_data.R.
+# Sex changes name by era: SEX (2011-2017), SEX1 (2018), SEXVAR (2019-2025). All three are in
+# CORE_VARS and are coalesced into sex_cat in 02_clean_data.R.
 
 saveRDS(core, here::here("data", "raw", "brfss_raw.rds"))
 message("Saved ", nrow(core), " rows to data/raw/brfss_raw.rds")

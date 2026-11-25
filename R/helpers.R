@@ -9,9 +9,10 @@ CORE_VARS <- c(
   "INCOME2",  # income category
   "HLTHPLN1", # any health coverage
   "_AGEG5YR", # age in 5-year bands
-  "_RACE",    # race/ethnicity
+  "_RACEGR2", "_RACEGR3",  # five-level race/ethnicity: _RACEGR2 2011-2012, _RACEGR3 2013-2019
   "_EDUCAG",  # education category
-  "EMPLOY1",  # employment status
+  "EMPLOY1", "EMPLOY",  # employment: EMPLOY 2011-2012, EMPLOY1 2013 onward
+  "SEX", "SEX1", "SEXVAR",  # respondent sex: SEX 2011-2017, SEX1 2018, SEXVAR 2019-2025
   "_LLCPWT", "_STSTR", "_PSU"  # survey design
 )
 

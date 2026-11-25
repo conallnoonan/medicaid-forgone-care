@@ -5,7 +5,7 @@ primary <- readRDS(here::here("data", "processed", "analysis.rds"))
 all_inc <- readRDS(here::here("data", "processed", "analysis_all_incomes.rds"))
 
 # 1. Linear probability model, state-clustered SEs (coefficient is in probability units)
-lpm <- feols(cost_barrier ~ treated_post + age_band + race_cat + educ_cat + employ_cat |
+lpm <- feols(cost_barrier ~ treated_post + age_band + sex_cat + race_cat + educ_cat + employ_cat |
                state_fips + year,
              data = primary, weights = ~llcpwt, cluster = ~state_fips)
 print(summary(lpm))

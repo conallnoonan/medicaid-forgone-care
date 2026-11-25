@@ -1,85 +1,311 @@
 ---
 title: "Medicaid expansion and cost-related forgone care among low-income adults"
-author: "Your name"
+subtitle: "Evidence from the Behavioral Risk Factor Surveillance System, 2011-2019"
+author: "Conall Noonan"
 date: today
 format:
   html:
     toc: true
+    toc-depth: 3
+    number-sections: true
     embed-resources: true
   pdf:
     toc: true
+    number-sections: true
 execute:
   echo: false
   warning: false
+  message: false
 ---
 
 ```{r setup}
 library(tidyverse)
 library(here)
+library(knitr)
+
+tab <- function(f) read_csv(here("output", "tables", f), show_col_types = FALSE)
+
+headline  <- tab("headline_estimates.csv")
+esdat     <- tab("event_study.csv")
+pretest   <- tab("pretrend_test.csv")
+trend     <- tab("trend_cost_barrier.csv")
+table1    <- tab("table1_by_expansion.csv")
+comp      <- tab("table_sample_composition.csv")
+or_survey <- tab("primary_odds_ratios.csv")
+primary   <- readRDS(here("data", "processed", "analysis.rds"))
+
+# ---- small helpers so every number in the text comes from the saved results ----
+H     <- function(i) filter(headline, id == i)
+pp    <- function(x, d = 1) formatC(100 * x, format = "f", digits = d)
+ci_pp <- function(i) paste0(pp(H(i)$conf_low), " to ", pp(H(i)$conf_high))
+orf   <- function(x) formatC(x, format = "f", digits = 2)
+ci_or <- function(i) paste0(orf(H(i)$conf_low), " to ", orf(H(i)$conf_high))
+ES    <- function(k) filter(esdat, rel_year == k)
+rate  <- function(y, g) trend |> filter(year == y, group == g) |> pull(rate)
+pct   <- function(x, d = 1) paste0(formatC(100 * x, format = "f", digits = d), "%")
+nf    <- function(x) format(x, big.mark = ",")
+
+n_sample   <- nrow(primary)
+n_states_t <- primary |> filter(treated_post == 1) |> distinct(state_fips) |> nrow()
+n_states_e <- primary |> filter(ever_expanded) |> distinct(state_fips) |> nrow()
+n_states_n <- primary |> filter(!ever_expanded) |> distinct(state_fips) |> nrow()
+t1 <- function(col, exp) table1 |> filter(ever_expanded == exp) |> pull({{ col }})
 ```
 
-## 1. Problem
+# Summary
 
-Did states that expanded Medicaid under the ACA see a larger drop in the share of low-income adults who skipped needed care because of cost, compared with non-expansion states?
+This report asks whether Medicaid expansion under the Affordable Care Act reduced the share of low-income adults who skip needed medical care because of cost. It uses `r nf(n_sample)` respondents aged 18 to 64 from the Behavioral Risk Factor Surveillance System (BRFSS), 2011 to 2019, and compares states that expanded Medicaid with states that did not, before and after expansion.
 
-## 2. Data generating process
+- **Main result.** Expansion is associated with a **`r pp(-H("lpm_main")$estimate)` percentage point reduction** in the probability that a low-income adult reports forgoing care because of cost (95% CI `r ci_pp("lpm_main")` points). In odds terms the estimate is **`r orf(H("logit_clustered")$estimate)`** (95% CI `r ci_or("logit_clustered")`), with standard errors clustered by state.
+- **Mechanism.** Health coverage rises by **`r pp(H("coverage")$estimate)` points**, which is consistent with coverage being the channel.
+- **Placebo.** Among higher-income adults, who were not eligible, the estimate is `r pp(H("placebo")$estimate)` points (95% CI `r ci_pp("placebo")`), close to zero.
+- **Timing.** The effect builds over the first two years (`r pp(ES(0)$estimate)` points in the first full year, `r pp(ES(2)$estimate)` points two years later). Pre-expansion coefficients are small and not jointly different from zero (p = `r formatC(pretest$p, format = "f", digits = 2)`).
 
-*Eligibility expands to 138% of poverty, eligible adults enroll, out-of-pocket costs fall, and more people seek care when needed. Individual factors shape exposure; state factors shape strength. States chose whether to expand, so assignment is not random.*
+These are estimates of an association under a difference-in-differences design. They rest on the assumption that expansion and non-expansion states would have followed similar trends in the absence of expansion, which section 9 discusses.
 
-## 3. Data
+# The problem
 
-BRFSS 2011-2019 (CDC) accessed with the `brfssdata` package; KFF expansion dates; optional ACS covariates.
+The Affordable Care Act allowed states to extend Medicaid to adults with incomes up to 138% of the federal poverty line. A 2012 Supreme Court decision made that expansion optional for states, so some states expanded starting in 2014 and others did not. That variation creates a natural comparison.
 
-## 4. Measures
+**Research question.** Did states that expanded Medicaid see a larger decline in cost-related forgone care among low-income adults than states that did not?
 
-- **Dependent variable:** could not see a doctor in the past 12 months because of cost (binary).
-- **Primary independent variable:** state Medicaid expansion in effect (time-varying binary), with state and year fixed effects.
-- **Controls:** age band, race/ethnicity, education, employment, income category.
+The question matters for two reasons. Forgone care is a direct measure of whether coverage translates into access, which is the policy goal of an expansion. And Medicaid eligibility remains an active policy debate, so evidence on what coverage changes do is relevant to current decisions. [Add citations to the prior literature on Medicaid expansion and access to care here.]
 
-## 5. Measure types
+# How the outcome comes about
 
-| Variable | Type |
+The outcome is produced by a chain of events, and each link suggests something we can check in the data.
+
+1. **Eligibility.** Expansion extends eligibility to adults up to 138% of the poverty line in adopting states.
+2. **Enrollment.** Some eligible adults enroll, so the share with health coverage rises. *Check:* coverage should increase in expansion states.
+3. **Lower cost at the point of care.** Medicaid coverage lowers or removes out-of-pocket costs. *Check:* the share reporting that cost kept them from seeing a doctor should fall.
+4. **Care-seeking.** With lower costs, more people see a doctor when they need to.
+
+Several factors shape this chain. At the individual level, income, age, health status and employment determine who is exposed to the policy and how much cost matters. At the state level, provider supply, outreach and enrollment effort, and the strength of existing safety nets affect how strongly the policy works.
+
+The key complication is that **states chose whether to expand**. Adoption was tied to politics and economics, so expansion states differ from non-expansion states for reasons that may also affect forgone care. This is why the analysis compares *changes over time* within states and tests for differences in pre-expansion trends, instead of comparing levels across states.
+
+# Data
+
+## Sources
+
+| Source | Use |
 |---|---|
-| Cost barrier | Binary |
-| Expansion in effect | Binary |
-| Income category | Ordinal |
-| Age band | Ordinal |
-| Race/ethnicity, education, employment, state | Nominal |
-| Year | Discrete (fixed effect) |
+| BRFSS, CDC (2011-2019), accessed with the `brfssdata` R package | Individual-level outcome, income, coverage, demographics, survey weights and design |
+| KFF, *Status of State Action on the Medicaid Expansion Decision* | State expansion implementation dates |
 
-## 6. Distribution
+BRFSS is a large, annual, state-based telephone survey, which makes it suitable for comparing states over time.
 
-Individual outcome: Bernoulli. State-year counts: binomial, with possible overdispersion handled by quasibinomial and clustered standard errors. Survey weights account for the complex design.
+## Sample
 
-## 7. Results
+- **Population:** adults aged 18 to 64 (age bands 1 to 9 of the BRFSS five-year age variable), in the 50 states and DC. Territories are excluded because they are not part of the expansion comparison.
+- **Low-income proxy:** respondents in the four lowest BRFSS income categories (household income under $25,000). BRFSS reports income only in categories, so this is a proxy for income near the 138% poverty cutoff. It is imperfect, because it includes some people above the cutoff and misses some below it.
+- **Years:** 2011 to 2019. BRFSS changed its weighting method and added cell-phone samples in 2011, so earlier years are not comparable, and 2020 onward brings pandemic-related changes.
+- **Final sample:** `r nf(n_sample)` respondents with an observed outcome. `r n_states_e` jurisdictions (including DC) had expanded by 2019, and `r n_states_n` had not.
 
-```{r fig-trend}
-#| fig-cap: "Weighted cost-barrier rate by year and expansion status."
-knitr::include_graphics(here("output", "figures", "fig1_trend.png"))
+## Harmonizing variables across years
+
+Several BRFSS variables changed names or definitions during the study window, so each was built from the version available in each period.
+
+- **Sex:** `SEX` (2011-2017), `SEX1` (2018), `SEXVAR` (2019).
+- **Employment:** `EMPLOY` (2011-2012), `EMPLOY1` (2013 onward).
+- **Race and ethnicity:** the five-level `_RACEGR2` (2011-2012) and `_RACEGR3` (2013-2019). Using a five-category measure keeps the coding the same across all nine years, at the cost of combining several smaller groups into "Other non-Hispanic."
+
+**Treatment timing.** A state counts as treated starting in the first full calendar year after its expansion took effect. A state that expanded on January 1 is treated that year, and a state that expanded later in the year is treated from the following year. This avoids a partly exposed year.
+
+# Measures
+
+```{r}
+#| label: tbl-measures
+#| tbl-cap: "Variables, roles and measurement types."
+tribble(
+  ~Variable, ~Role, ~Type, ~`BRFSS source`,
+  "Could not see a doctor because of cost", "Dependent", "Binary", "MEDCOST",
+  "Any health coverage", "Dependent (mechanism check)", "Binary", "HLTHPLN1",
+  "Medicaid expansion in effect (state-year)", "Primary independent", "Binary", "State and year merged with KFF dates",
+  "Age group", "Control", "Ordinal", "_AGEG5YR",
+  "Sex", "Control", "Nominal", "SEX / SEX1 / SEXVAR",
+  "Race and ethnicity", "Control", "Nominal", "_RACEGR2 / _RACEGR3",
+  "Education", "Control", "Ordinal", "_EDUCAG",
+  "Employment status", "Control", "Nominal", "EMPLOY / EMPLOY1",
+  "Income category", "Sample restriction", "Ordinal", "INCOME2",
+  "State; survey year", "Fixed effects", "Nominal; discrete", "_STATE; year"
+) |>
+  kable()
 ```
 
-```{r tbl-or}
-readr::read_csv(here("output", "tables", "primary_odds_ratios.csv"), show_col_types = FALSE) |>
-  select(model, estimate, conf.low, conf.high, p.value) |>
-  knitr::kable(digits = 3, caption = "Odds ratio for expansion in effect.")
+The primary outcome is binary: whether the respondent needed to see a doctor in the past 12 months but could not because of cost. The primary independent variable is a state-by-year indicator equal to 1 when the state's expansion was fully in effect.
+
+# Statistical model
+
+## Distribution of the outcome
+
+At the individual level, each respondent either forgoes care or does not, so the outcome is **Bernoulli** with a probability *p* that depends on covariates. Aggregated to state-year cells, the number of respondents reporting a cost barrier is **binomial**. In practice, unmeasured state characteristics add variation beyond a pure binomial (overdispersion). That motivates two choices: a logit model, which models *p* directly and keeps predictions between 0 and 1, and standard errors that allow for correlation among respondents in the same state.
+
+## Estimating equations
+
+The main specification is a two-way fixed effects difference-in-differences model. For respondent $i$ in state $s$ and year $t$:
+
+$$\Pr(Y_{ist}=1)=\Lambda\!\left(\alpha_s+\gamma_t+\beta\,\text{Expansion}_{st}+X_{ist}'\delta\right)$$
+
+where $\Lambda$ is the logistic function, $\alpha_s$ are state fixed effects, $\gamma_t$ are year fixed effects, $\text{Expansion}_{st}$ equals 1 when expansion is in effect, and $X_{ist}$ are the controls. A linear probability version replaces $\Lambda$ with a linear function, so $\beta$ is directly a change in probability.
+
+The event study replaces the single treatment indicator with indicators for each year relative to expansion:
+
+$$Y_{ist}=\alpha_s+\gamma_t+\sum_{k\neq -1}\beta_k\,\mathbf{1}[t-g_s=k]+X_{ist}'\delta+\varepsilon_{ist}$$
+
+where $g_s$ is the first full year of expansion in state $s$, the year before expansion ($k=-1$) is the reference, and the end points are binned at -4 and 4. States that never expanded serve as the comparison group.
+
+## Inference
+
+All models use BRFSS final survey weights. **Standard errors in the headline estimates are clustered by state**, because expansion varies at the state level and outcomes within a state are correlated over time. The survey-design standard errors from a weighted logit that treats BRFSS strata and primary sampling units as the clusters do not capture this correlation and are too small, so they appear only in the appendix.
+
+# Descriptive evidence
+
+## Trends
+
+```{r}
+#| label: fig-trend
+#| fig-cap: "Weighted share of low-income adults who could not see a doctor because of cost, by whether the state expanded Medicaid by 2019. The dashed line marks 2014."
+include_graphics(here("output", "figures", "fig1_trend.png"))
 ```
 
-```{r fig-or}
-#| fig-cap: "Odds ratios with 95% confidence intervals."
-knitr::include_graphics(here("output", "figures", "fig2_odds_ratios.png"))
+@fig-trend shows that the cost-barrier rate was higher in non-expansion states throughout. Before expansion the two groups moved roughly in parallel: in expansion states the rate was `r pct(rate(2011, "Expansion states"))` in 2011 and `r pct(rate(2013, "Expansion states"))` in 2013, and in non-expansion states `r pct(rate(2011, "Non-expansion states"))` and `r pct(rate(2013, "Non-expansion states"))`. Both groups fall in 2014, which suggests that something common to all states (such as the economic recovery or marketplace subsidies) was at work. After 2014 the gap widens: by 2019 the rate was `r pct(rate(2019, "Expansion states"))` in expansion states and `r pct(rate(2019, "Non-expansion states"))` in non-expansion states.
+
+Note that the figure groups states by whether they ever expanded by 2019. States that adopted later (for example in 2015 or 2016) are in the "expansion" line before they were treated, so the 2014 line is approximate. The regression models handle timing state by state.
+
+## Sample characteristics
+
+```{r}
+#| label: tbl-table1
+#| tbl-cap: "Pooled 2011-2019 outcomes among low-income adults, by whether the state expanded Medicaid. Weighted means; descriptive only."
+table1 |>
+  mutate(`State group` = if_else(ever_expanded, "Expansion states", "Non-expansion states"),
+         `Respondents` = nf(n),
+         `Skipped care due to cost` = pct(cost_barrier),
+         `Has health coverage` = pct(has_coverage)) |>
+  select(`State group`, Respondents, `Skipped care due to cost`, `Has health coverage`) |>
+  kable(align = "lrrr")
 ```
 
-## 8. Robustness
+Pooled across years, the cost-barrier rate is `r pct(t1(cost_barrier, TRUE))` in expansion states and `r pct(t1(cost_barrier, FALSE))` in non-expansion states, and coverage is `r pct(t1(has_coverage, TRUE))` and `r pct(t1(has_coverage, FALSE))`. These pooled differences mix the effect of the policy with differences between the states and over time, so they are not estimates of the policy effect. They show why a design that compares changes within states is needed.
 
-*Summarize the linear probability model, placebo test (higher-income adults), mechanism check (health coverage), and event study.*
+```{r}
+#| label: tbl-comp
+#| tbl-cap: "Weighted composition of the sample, pooled across years, by state group (share within each group)."
+comp |>
+  mutate(across(where(is.numeric), ~ pct(.x))) |>
+  rename(Characteristic = variable, Category = level) |>
+  kable(align = "llrr")
+```
 
-## 9. Limitations
+# Main results
 
-- Expansion was not randomly assigned; identification relies on parallel trends.
-- Income is categorical, so eligibility is only approximated.
-- Self-reported outcome and survey nonresponse.
-- Staggered adoption can bias two-way fixed effects estimates; compare against a staggered-adoption estimator if time allows.
+```{r}
+#| label: tbl-main
+#| tbl-cap: "Estimated association between Medicaid expansion in effect and cost-related forgone care among low-income adults. State and year fixed effects; state-clustered 95% confidence intervals."
+bind_rows(
+  H("lpm_main") |> transmute(Model = "Linear probability (percentage points)",
+                              Estimate = pp(estimate), `95% CI` = paste0(pp(conf_low), " to ", pp(conf_high)),
+                              Observations = nf(n)),
+  H("logit_clustered") |> transmute(Model = "Logit (odds ratio)",
+                                     Estimate = orf(estimate), `95% CI` = paste0(orf(conf_low), " to ", orf(conf_high)),
+                                     Observations = nf(n))
+) |>
+  kable(align = "lrrr")
+```
 
-## References
+In the linear probability model, expansion in effect is associated with a **`r pp(-H("lpm_main")$estimate)` percentage point decrease** in the probability that a low-income adult reports forgoing care because of cost (95% CI `r ci_pp("lpm_main")`). The logit model gives an odds ratio of **`r orf(H("logit_clustered")$estimate)`**, which means roughly `r round(100 * (1 - H("logit_clustered")$estimate))`% lower odds of forgone care. Because the baseline rate is about 30%, the two are consistent: the odds ratio implies a somewhat larger absolute change than the linear model's average effect, which is expected because the effect on the probability scale depends on the baseline rate.
 
-Cite with `brfssdata::brfss_citation(2011:2019)` and the CDC BRFSS.
+```{r}
+#| label: fig-or-clustered
+#| fig-cap: "Odds ratios for Medicaid expansion in effect. The state-clustered interval is wider than the survey-design interval but excludes 1."
+include_graphics(here("output", "figures", "fig2b_odds_ratios_clustered.png"))
+```
+
+# Robustness and diagnostics
+
+## Event study and pre-trends
+
+```{r}
+#| label: fig-event
+#| fig-cap: "Event-study estimates of the change in the probability of forgone care relative to the year before expansion. State-clustered 95% confidence intervals."
+include_graphics(here("output", "figures", "fig3_event_study.png"))
+```
+
+```{r}
+#| label: tbl-event
+#| tbl-cap: "Event-study coefficients in percentage points (reference period: the year before expansion)."
+esdat |>
+  mutate(`Years since expansion` = case_when(rel_year <= -4 ~ "-4 or earlier",
+                                              rel_year >= 4 ~ "4 or later",
+                                              rel_year == -1 ~ "-1 (reference)",
+                                              TRUE ~ as.character(rel_year)),
+         `Estimate (pp)` = pp(estimate),
+         `95% CI` = if_else(rel_year == -1, "-", paste0(pp(conf_low), " to ", pp(conf_high)))) |>
+  select(`Years since expansion`, `Estimate (pp)`, `95% CI`) |>
+  kable(align = "lrr")
+```
+
+The pre-expansion coefficients are small (`r pp(ES(-4)$estimate)`, `r pp(ES(-3)$estimate)` and `r pp(ES(-2)$estimate)` points) and none is individually significant. A joint test that all three equal zero gives p = `r formatC(pretest$p, format = "f", digits = 3)` (F = `r formatC(pretest$stat, format = "f", digits = 2)`), so there is no evidence of a differential pre-trend. This is consistent with the parallel-trends assumption, but it is not proof. With only three pre-period coefficients and 51 clusters, the test has limited power, and the earliest coefficient (`r pp(ES(-4)$estimate)` points) is the largest of the three.
+
+After expansion the estimated effect is `r pp(ES(0)$estimate)` points in the first full year, `r pp(ES(1)$estimate)` after one year, `r pp(ES(2)$estimate)` after two years, `r pp(ES(3)$estimate)` after three, and `r pp(ES(4)$estimate)` four or more years out. The pattern suggests an effect that builds as enrollment ramps up and then partly levels off. Part of the later fade may reflect composition, because only earlier-adopting states contribute to the longest horizons.
+
+## Placebo and mechanism
+
+```{r}
+#| label: fig-checks
+#| fig-cap: "Estimated effect of expansion across the main outcome, the placebo group and the coverage outcome (percentage points, state-clustered 95% CI)."
+include_graphics(here("output", "figures", "fig4_effect_estimates.png"))
+```
+
+- **Placebo (higher-income adults).** Adults in the upper income categories were mostly not eligible for expansion. If the main result reflected a general change in cost-related forgone care in expansion states, the placebo group would show it too. The estimate is `r pp(H("placebo")$estimate)` points (95% CI `r ci_pp("placebo")`), close to zero and not statistically significant, which supports the interpretation that the effect is concentrated among low-income adults.
+- **Mechanism (health coverage).** Among low-income adults, expansion is associated with a **`r pp(H("coverage")$estimate)` point increase** in having any health coverage (95% CI `r ci_pp("coverage")`). This is consistent with the proposed channel: coverage rises, and forgone care falls. The coverage effect is modest, which is plausible because the income proxy includes many people above the eligibility threshold, and it is a limitation of the design more than a finding about the policy.
+
+# Limitations
+
+- **Expansion was not randomly assigned.** The design depends on parallel trends. The pre-trend evidence is reassuring but cannot rule out differential trends driven by unmeasured state factors, such as economic conditions or other health policy changes that coincided with expansion.
+- **Income is only approximated.** BRFSS measures income in broad categories and relies on self-report, so the low-income sample does not match the eligibility rule exactly. This dilutes the estimated effect on the people who actually became eligible.
+- **Self-reported outcome and survey nonresponse.** Forgone care is self-reported, and a telephone survey misses some groups. Weights adjust for known differences but not for unobserved ones.
+- **Staggered adoption.** States adopted at different times. Two-way fixed effects models can be biased when effects differ across adoption cohorts. Most treated states expanded in 2014, which limits this concern here, but a staggered-adoption estimator (such as the Callaway and Sant'Anna approach) is the natural next check.
+- **Early expanders.** Some states had partial expansions before 2014, so their pre-2014 years are not fully untreated. Dropping them is a sensitivity check worth running.
+- **Changes in BRFSS over time.** Several variables were renamed or recoded across the study years. I harmonized sex, employment and race, but the race measure is coarser than the single measure available in later years.
+- **Short horizon.** The data end in 2019, so the analysis cannot speak to longer-run effects or to states that expanded after 2019.
+- **Association language.** The results are estimates of an association under a difference-in-differences design, and I have avoided stronger causal language.
+
+# Discussion
+
+The results point in a consistent direction. Expansion is associated with a decline of roughly three points in the probability that a low-income adult skips care because of cost, with a corresponding rise in coverage, no comparable change among higher-income adults, and no sign of differential trends before expansion. Together these match what the proposed mechanism predicts.
+
+For policy, the finding suggests that coverage expansions can change whether cost keeps low-income adults from care, but the size of the effect depends on how many people actually gain coverage. A coverage effect of about `r pp(H("coverage")$estimate, 0)` points among a broad low-income group, and a smaller effect on forgone care, implies that many low-income adults still reported cost barriers after expansion. In expansion states the rate was still `r pct(rate(2019, "Expansion states"), 0)` in 2019, so coverage alone did not eliminate cost-related barriers.
+
+Natural extensions include a staggered-adoption estimator, separate estimates by age, sex and race and ethnicity, and other access outcomes in BRFSS such as having a personal doctor or a recent checkup.
+
+# Reproducibility and data citations
+
+All results come from a scripted pipeline in the project repository (`R/00_setup.R` through `R/06_figures.R`) and can be rerun from the raw BRFSS download. Raw and processed data are not committed.
+
+```{r citations}
+#| results: asis
+cat("Data: Centers for Disease Control and Prevention (CDC), Behavioral Risk Factor Surveillance System Survey Data, 2011-2019, <https://www.cdc.gov/brfss/>. Accessed with the `brfssdata` R package (Masum, 2026). Expansion dates: KFF, *Status of State Action on the Medicaid Expansion Decision*, <https://www.kff.org/medicaid/state-indicator/state-activity-around-expanding-medicaid-under-the-affordable-care-act/>.")
+```
+
+Software: R with the `tidyverse`, `survey`, `srvyr`, `fixest`, `broom`, `here` and `brfssdata` packages.
+
+# Appendix: survey-design logit {.unnumbered}
+
+The first-pass logit uses BRFSS strata and primary sampling units as the survey design. Its point estimates are close to the clustered estimates, but its intervals do not account for correlation within states and are too narrow, so it is reported here for completeness.
+
+```{r}
+#| label: tbl-or-survey
+#| tbl-cap: "Survey-design logit odds ratios for expansion in effect (intervals do not account for state clustering)."
+or_survey |>
+  transmute(Model = model, `Odds ratio` = orf(estimate),
+            `95% CI` = paste0(orf(conf.low), " to ", orf(conf.high))) |>
+  kable(align = "lrr")
+```
+
+```{r}
+#| label: fig-or-survey
+#| fig-cap: "Original odds-ratio figure with survey-design intervals."
+include_graphics(here("output", "figures", "fig2_odds_ratios.png"))
+```
